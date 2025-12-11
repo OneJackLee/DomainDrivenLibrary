@@ -6,10 +6,16 @@
     <Nullable>enable</Nullable>
     <RootNamespace>DomainDrivenLibrary</RootNamespace>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\DomainDrivenLibrary.Application\DomainDrivenLibrary.Application.csproj"/>
     <ProjectReference Include="..\DomainDrivenLibrary.Domain\DomainDrivenLibrary.Domain.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EFCore.NamingConventions" Version="9.0.0"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
+    <PackageReference Include="Ulid" Version="1.4.1"/>
   </ItemGroup>
 
 </Project>
