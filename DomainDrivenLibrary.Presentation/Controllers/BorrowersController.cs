@@ -1,3 +1,4 @@
+using DomainDrivenLibrary.Borrowers.GetAllBorrowers;
 using DomainDrivenLibrary.Borrowers.RegisterBorrower;
 using DomainDrivenLibrary.Contracts.Requests;
 using DomainDrivenLibrary.Contracts.Responses;
@@ -10,7 +11,10 @@ namespace DomainDrivenLibrary.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public sealed class BorrowersController(RegisterBorrowerCommandHandler registerBorrowerHandler) : ControllerBase
+public sealed class BorrowersController(
+    RegisterBorrowerCommandHandler registerBorrowerHandler,
+    GetAllBorrowersQueryHandler getAllBorrowersHandler)
+    : ControllerBase
 {
     /// <summary>
     ///     Registers a new borrower in the library.
@@ -33,6 +37,23 @@ public sealed class BorrowersController(RegisterBorrowerCommandHandler registerB
         var result = await registerBorrowerHandler.HandleAsync(command, cancellationToken);
         var response = BorrowerResponse.FromDto(result);
 
-        return CreatedAtAction(nameof(RegisterBorrower), new { id = response.Id }, response);
+        return CreatedAtAction(nameof(GetAllBorrowers), new { id = response.Id }, response);
+    }
+
+    /// <summary>
+    ///     Gets all borrowers in the library.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of all borrowers.</returns>
+    /// <response code="200">Returns the list of borrowers.</response>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<BorrowerResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllBorrowers(CancellationToken cancellationToken)
+    {
+        var query = new GetAllBorrowersQuery();
+        var result = await getAllBorrowersHandler.HandleAsync(query, cancellationToken);
+        var response = result.Select(BorrowerResponse.FromDto);
+
+        return Ok(response);
     }
 }
