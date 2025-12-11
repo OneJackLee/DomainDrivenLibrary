@@ -1,0 +1,3 @@
+namespace DomainDrivenLibrary.Dependencies;
+
+public interface IScopedDependency;
