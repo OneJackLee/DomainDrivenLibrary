@@ -1,0 +1,32 @@
+﻿services:
+  domaindrivenlibrary.presentation:
+    image: domaindrivenlibrary.presentation
+    build:
+      context: .
+      dockerfile: DomainDrivenLibrary.Presentation/Dockerfile
+    ports:
+      - "5240:5240"
+      - "7236:7236"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:7236;http://+:5240
+      - ASPNETCORE_HTTPS_PORT=7236
+      - ASPNETCORE_Kestrel:Certificates:Default:Password=password
+      - ASPNETCORE_Kestrel:Certificates:Default:Path=/cert/aspnetapp.pfx
+      - ConnectionStrings:Default=Host=db;Port=5432;Database=library_db;Username=postgres;Password=postgres;
+    volumes:
+      - ~/.aspnet/https:/cert:ro
+      - ./.containers/logs:/logs
+    depends_on:
+      - db
+  db:
+    image: postgres:18.1-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=library_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./.containers/db:/var/lib/postgresql
+    ports:
+      - "5432:5432"
