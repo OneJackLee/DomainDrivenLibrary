@@ -8,8 +8,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\DomainDrivenLibrary.Application\DomainDrivenLibrary.Application.csproj"/>
-    <ProjectReference Include="..\DomainDrivenLibrary.Domain\DomainDrivenLibrary.Domain.csproj"/>
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
   </ItemGroup>
 
 </Project>

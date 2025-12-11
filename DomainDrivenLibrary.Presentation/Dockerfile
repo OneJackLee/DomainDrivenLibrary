@@ -11,6 +11,8 @@ COPY ["DomainDrivenLibrary.Presentation/DomainDrivenLibrary.Presentation.csproj"
 COPY ["Sources/DomainDrivenLibrary.Application/DomainDrivenLibrary.Application.csproj", "Sources/DomainDrivenLibrary.Application/"]
 COPY ["Sources/DomainDrivenLibrary.Infrastructure/DomainDrivenLibrary.Infrastructure.csproj", "Sources/DomainDrivenLibrary.Infrastructure/"]
 COPY ["Sources/DomainDrivenLibrary.Domain/DomainDrivenLibrary.Domain.csproj", "Sources/DomainDrivenLibrary.Domain/"]
+COPY ["Common/DomainDrivenLibrary.Application.Abstractions/DomainDrivenLibrary.Application.Abstractions.csproj", "Common/DomainDrivenLibrary.Application.Abstractions/"]
+COPY ["Common/DomainDrivenLibrary.Domain.Shared/DomainDrivenLibrary.Domain.Shared.csproj", "Common/DomainDrivenLibrary.Domain.Shared/"]
 RUN dotnet restore "DomainDrivenLibrary.Presentation/DomainDrivenLibrary.Presentation.csproj"
 COPY . .
 WORKDIR "/src/DomainDrivenLibrary.Presentation"
