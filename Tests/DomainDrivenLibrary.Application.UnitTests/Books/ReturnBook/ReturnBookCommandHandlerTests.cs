@@ -1,6 +1,4 @@
-using DomainDrivenLibrary.Books.GetAllBooks;
 using DomainDrivenLibrary.Books.Identifier;
-using DomainDrivenLibrary.Books.ReturnBook;
 using DomainDrivenLibrary.Borrowers.Identifier;
 using DomainDrivenLibrary.CatalogEntries;
 using DomainDrivenLibrary.CatalogEntries.ValueObjects;
@@ -8,10 +6,31 @@ using DomainDrivenLibrary.Data;
 using FluentAssertions;
 using NSubstitute;
 
-namespace DomainDrivenLibrary.Books;
+namespace DomainDrivenLibrary.Books.ReturnBook;
 
 public class ReturnBookCommandHandlerTests
 {
+
+    #region Cancellation Token
+
+    [Fact]
+    public async Task HandleAsync_PassesCancellationTokenToAllRepositories()
+    {
+        // Arrange
+        var command = new ReturnBookCommand(ValidBookId, ValidBorrowerId);
+        using var cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        // Act
+        await _handler.HandleAsync(command, token);
+
+        // Assert
+        await _bookRepository.Received(1).GetByIdAsync(Arg.Any<BookId>(), token);
+        await _catalogEntryRepository.Received(1).GetByIsbnAsync(Arg.Any<Isbn>(), token);
+        await _unitOfWork.Received(1).SaveChangesAsync(token);
+    }
+
+    #endregion
     #region Test Data
 
     private const string ValidBookId = "book-123";
@@ -71,7 +90,7 @@ public class ReturnBookCommandHandlerTests
         var command = new ReturnBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        BookDetailsDto result = await _handler.HandleAsync(command);
+        var result = await _handler.HandleAsync(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -160,7 +179,8 @@ public class ReturnBookCommandHandlerTests
         var command = new ReturnBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -197,7 +217,8 @@ public class ReturnBookCommandHandlerTests
         var command = new ReturnBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -234,7 +255,8 @@ public class ReturnBookCommandHandlerTests
         var command = new ReturnBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -251,7 +273,8 @@ public class ReturnBookCommandHandlerTests
         var command = new ReturnBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert - Book should still be borrowed
         book.IsAvailable.Should().BeFalse();
@@ -294,27 +317,6 @@ public class ReturnBookCommandHandlerTests
         // Assert - Should throw "not currently borrowed", not "borrower mismatch"
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*not currently borrowed*");
-    }
-
-    #endregion
-
-    #region Cancellation Token
-
-    [Fact]
-    public async Task HandleAsync_PassesCancellationTokenToAllRepositories()
-    {
-        // Arrange
-        var command = new ReturnBookCommand(ValidBookId, ValidBorrowerId);
-        using var cts = new CancellationTokenSource();
-        CancellationToken token = cts.Token;
-
-        // Act
-        await _handler.HandleAsync(command, token);
-
-        // Assert
-        await _bookRepository.Received(1).GetByIdAsync(Arg.Any<BookId>(), token);
-        await _catalogEntryRepository.Received(1).GetByIsbnAsync(Arg.Any<Isbn>(), token);
-        await _unitOfWork.Received(1).SaveChangesAsync(token);
     }
 
     #endregion

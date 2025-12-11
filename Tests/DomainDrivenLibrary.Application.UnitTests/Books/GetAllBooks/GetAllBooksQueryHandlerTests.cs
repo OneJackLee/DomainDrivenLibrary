@@ -1,4 +1,3 @@
-using DomainDrivenLibrary.Books.GetAllBooks;
 using DomainDrivenLibrary.Books.Identifier;
 using DomainDrivenLibrary.Books.Models;
 using DomainDrivenLibrary.Borrowers.Identifier;
@@ -7,10 +6,74 @@ using DomainDrivenLibrary.CatalogEntries.ValueObjects;
 using FluentAssertions;
 using NSubstitute;
 
-namespace DomainDrivenLibrary.Books;
+namespace DomainDrivenLibrary.Books.GetAllBooks;
 
 public class GetAllBooksQueryHandlerTests
 {
+
+    #region Empty Results
+
+    [Fact]
+    public async Task HandleAsync_WhenNoBooks_ReturnsEmptyList()
+    {
+        // Arrange
+        var query = new GetAllBooksQuery();
+
+        // Act
+        var result = await _handler.HandleAsync(query);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region DTO Mapping
+
+    [Fact]
+    public async Task HandleAsync_MapsNestedCatalogEntryCorrectly()
+    {
+        // Arrange
+        var book = CreateAvailableBook("book-1", "9780132350884");
+        var catalogEntry = CreateCatalogEntry("9780132350884", "Clean Code", "Robert C. Martin");
+        var bookWithCatalog = new BookWithCatalog(book, catalogEntry);
+
+        _bookRepository.GetAllWithCatalogAsync(Arg.Any<CancellationToken>())
+            .Returns(new List<BookWithCatalog>
+            {
+                bookWithCatalog
+            });
+
+        var query = new GetAllBooksQuery();
+
+        // Act
+        var result = await _handler.HandleAsync(query);
+
+        // Assert
+        result[0].CatalogEntry.Should().NotBeNull();
+        result[0].CatalogEntry.Title.Should().Be("Clean Code");
+        result[0].CatalogEntry.Author.Should().Be("Robert C. Martin");
+    }
+
+    #endregion
+
+    #region Return Type
+
+    [Fact]
+    public async Task HandleAsync_ReturnsReadOnlyList()
+    {
+        // Arrange
+        var query = new GetAllBooksQuery();
+
+        // Act
+        var result = await _handler.HandleAsync(query);
+
+        // Assert
+        result.Should().BeAssignableTo<IReadOnlyList<BookDetailsDto>>();
+    }
+
+    #endregion
     #region Test Data
 
     private static Book CreateAvailableBook(string id, string isbn) =>
@@ -44,24 +107,6 @@ public class GetAllBooksQueryHandlerTests
 
     #endregion
 
-    #region Empty Results
-
-    [Fact]
-    public async Task HandleAsync_WhenNoBooks_ReturnsEmptyList()
-    {
-        // Arrange
-        var query = new GetAllBooksQuery();
-
-        // Act
-        IReadOnlyList<BookDetailsDto> result = await _handler.HandleAsync(query);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().BeEmpty();
-    }
-
-    #endregion
-
     #region Single Book
 
     [Fact]
@@ -73,16 +118,19 @@ public class GetAllBooksQueryHandlerTests
         var bookWithCatalog = new BookWithCatalog(book, catalogEntry);
 
         _bookRepository.GetAllWithCatalogAsync(Arg.Any<CancellationToken>())
-            .Returns(new List<BookWithCatalog> { bookWithCatalog });
+            .Returns(new List<BookWithCatalog>
+            {
+                bookWithCatalog
+            });
 
         var query = new GetAllBooksQuery();
 
         // Act
-        IReadOnlyList<BookDetailsDto> result = await _handler.HandleAsync(query);
+        var result = await _handler.HandleAsync(query);
 
         // Assert
         result.Should().HaveCount(1);
-        BookDetailsDto dto = result[0];
+        var dto = result[0];
         dto.Id.Should().Be("BOOK-123");
         dto.Isbn.Should().Be("9780132350884");
         dto.CatalogEntry.Title.Should().Be("Clean Code");
@@ -100,16 +148,19 @@ public class GetAllBooksQueryHandlerTests
         var bookWithCatalog = new BookWithCatalog(book, catalogEntry);
 
         _bookRepository.GetAllWithCatalogAsync(Arg.Any<CancellationToken>())
-            .Returns(new List<BookWithCatalog> { bookWithCatalog });
+            .Returns(new List<BookWithCatalog>
+            {
+                bookWithCatalog
+            });
 
         var query = new GetAllBooksQuery();
 
         // Act
-        IReadOnlyList<BookDetailsDto> result = await _handler.HandleAsync(query);
+        var result = await _handler.HandleAsync(query);
 
         // Assert
         result.Should().HaveCount(1);
-        BookDetailsDto dto = result[0];
+        var dto = result[0];
         dto.IsAvailable.Should().BeFalse();
         dto.BorrowedBy.Should().Be("BORROWER-789");
     }
@@ -132,15 +183,13 @@ public class GetAllBooksQueryHandlerTests
         _bookRepository.GetAllWithCatalogAsync(Arg.Any<CancellationToken>())
             .Returns(new List<BookWithCatalog>
             {
-                new(book1, catalogEntry1),
-                new(book2, catalogEntry2),
-                new(book3, catalogEntry1)
+                new(book1, catalogEntry1), new(book2, catalogEntry2), new(book3, catalogEntry1)
             });
 
         var query = new GetAllBooksQuery();
 
         // Act
-        IReadOnlyList<BookDetailsDto> result = await _handler.HandleAsync(query);
+        var result = await _handler.HandleAsync(query);
 
         // Assert
         result.Should().HaveCount(3);
@@ -157,46 +206,19 @@ public class GetAllBooksQueryHandlerTests
         _bookRepository.GetAllWithCatalogAsync(Arg.Any<CancellationToken>())
             .Returns(new List<BookWithCatalog>
             {
-                new(book1, catalogEntry),
-                new(book2, catalogEntry)
+                new(book1, catalogEntry), new(book2, catalogEntry)
             });
 
         var query = new GetAllBooksQuery();
 
         // Act
-        IReadOnlyList<BookDetailsDto> result = await _handler.HandleAsync(query);
+        var result = await _handler.HandleAsync(query);
 
         // Assert
         result.Should().HaveCount(2);
         result.Should().Contain(dto => dto.Id == "COPY-1" && dto.IsAvailable);
         result.Should().Contain(dto => dto.Id == "COPY-2" && !dto.IsAvailable);
         result.All(dto => dto.Isbn == "9780132350884").Should().BeTrue();
-    }
-
-    #endregion
-
-    #region DTO Mapping
-
-    [Fact]
-    public async Task HandleAsync_MapsNestedCatalogEntryCorrectly()
-    {
-        // Arrange
-        var book = CreateAvailableBook("book-1", "9780132350884");
-        var catalogEntry = CreateCatalogEntry("9780132350884", "Clean Code", "Robert C. Martin");
-        var bookWithCatalog = new BookWithCatalog(book, catalogEntry);
-
-        _bookRepository.GetAllWithCatalogAsync(Arg.Any<CancellationToken>())
-            .Returns(new List<BookWithCatalog> { bookWithCatalog });
-
-        var query = new GetAllBooksQuery();
-
-        // Act
-        IReadOnlyList<BookDetailsDto> result = await _handler.HandleAsync(query);
-
-        // Assert
-        result[0].CatalogEntry.Should().NotBeNull();
-        result[0].CatalogEntry.Title.Should().Be("Clean Code");
-        result[0].CatalogEntry.Author.Should().Be("Robert C. Martin");
     }
 
     #endregion
@@ -222,30 +244,13 @@ public class GetAllBooksQueryHandlerTests
         // Arrange
         var query = new GetAllBooksQuery();
         using var cts = new CancellationTokenSource();
-        CancellationToken token = cts.Token;
+        var token = cts.Token;
 
         // Act
         await _handler.HandleAsync(query, token);
 
         // Assert
         await _bookRepository.Received(1).GetAllWithCatalogAsync(token);
-    }
-
-    #endregion
-
-    #region Return Type
-
-    [Fact]
-    public async Task HandleAsync_ReturnsReadOnlyList()
-    {
-        // Arrange
-        var query = new GetAllBooksQuery();
-
-        // Act
-        IReadOnlyList<BookDetailsDto> result = await _handler.HandleAsync(query);
-
-        // Assert
-        result.Should().BeAssignableTo<IReadOnlyList<BookDetailsDto>>();
     }
 
     #endregion

@@ -1,5 +1,3 @@
-using DomainDrivenLibrary.Books.GetAllBooks;
-using DomainDrivenLibrary.Books.RegisterBook;
 using DomainDrivenLibrary.CatalogEntries;
 using DomainDrivenLibrary.CatalogEntries.ValueObjects;
 using DomainDrivenLibrary.Data;
@@ -7,10 +5,31 @@ using DomainDrivenLibrary.Identifier;
 using FluentAssertions;
 using NSubstitute;
 
-namespace DomainDrivenLibrary.Books;
+namespace DomainDrivenLibrary.Books.RegisterBook;
 
 public class RegisterBookCommandHandlerTests
 {
+
+    #region Cancellation Token
+
+    [Fact]
+    public async Task HandleAsync_PassesCancellationTokenToRepositories()
+    {
+        // Arrange
+        var command = new RegisterBookCommand(ValidIsbn, ValidTitle, ValidAuthor);
+        using var cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        // Act
+        await _handler.HandleAsync(command, token);
+
+        // Assert
+        await _catalogEntryRepository.Received(1)
+            .GetByIsbnAsync(Arg.Any<Isbn>(), token);
+        await _unitOfWork.Received(1).SaveChangesAsync(token);
+    }
+
+    #endregion
     #region Test Data
 
     private const string ValidIsbn = "9780132350884";
@@ -57,7 +76,7 @@ public class RegisterBookCommandHandlerTests
         var command = new RegisterBookCommand(ValidIsbn, ValidTitle, ValidAuthor);
 
         // Act
-        BookDetailsDto result = await _handler.HandleAsync(command);
+        var result = await _handler.HandleAsync(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -141,7 +160,7 @@ public class RegisterBookCommandHandlerTests
         var command = new RegisterBookCommand(ValidIsbn, ValidTitle, ValidAuthor);
 
         // Act
-        BookDetailsDto result = await _handler.HandleAsync(command);
+        var result = await _handler.HandleAsync(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -195,7 +214,7 @@ public class RegisterBookCommandHandlerTests
         var command = new RegisterBookCommand(ValidIsbn, "CLEAN CODE", "ROBERT C. MARTIN");
 
         // Act
-        BookDetailsDto result = await _handler.HandleAsync(command);
+        var result = await _handler.HandleAsync(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -252,7 +271,8 @@ public class RegisterBookCommandHandlerTests
         var command = new RegisterBookCommand(ValidIsbn, "Different Title", ValidAuthor);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         _bookRepository.DidNotReceive().Add(Arg.Any<Book>());
@@ -269,7 +289,8 @@ public class RegisterBookCommandHandlerTests
         var command = new RegisterBookCommand(ValidIsbn, "Different Title", ValidAuthor);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -322,9 +343,9 @@ public class RegisterBookCommandHandlerTests
     }
 
     [Theory]
-    [InlineData("123")] // Too short
+    [InlineData("123")]            // Too short
     [InlineData("12345678901234")] // Too long (14 digits)
-    [InlineData("abcdefghij")] // Non-numeric
+    [InlineData("abcdefghij")]     // Non-numeric
     public async Task HandleAsync_WithInvalidIsbnFormat_ThrowsArgumentException(string invalidIsbn)
     {
         // Arrange
@@ -348,7 +369,7 @@ public class RegisterBookCommandHandlerTests
         var command = new RegisterBookCommand("978-0-13-235088-4", ValidTitle, ValidAuthor);
 
         // Act
-        BookDetailsDto result = await _handler.HandleAsync(command);
+        var result = await _handler.HandleAsync(command);
 
         // Assert
         result.Isbn.Should().Be("9780132350884");
@@ -361,31 +382,10 @@ public class RegisterBookCommandHandlerTests
         var command = new RegisterBookCommand("978 0 13 235088 4", ValidTitle, ValidAuthor);
 
         // Act
-        BookDetailsDto result = await _handler.HandleAsync(command);
+        var result = await _handler.HandleAsync(command);
 
         // Assert
         result.Isbn.Should().Be("9780132350884");
-    }
-
-    #endregion
-
-    #region Cancellation Token
-
-    [Fact]
-    public async Task HandleAsync_PassesCancellationTokenToRepositories()
-    {
-        // Arrange
-        var command = new RegisterBookCommand(ValidIsbn, ValidTitle, ValidAuthor);
-        using var cts = new CancellationTokenSource();
-        CancellationToken token = cts.Token;
-
-        // Act
-        await _handler.HandleAsync(command, token);
-
-        // Assert
-        await _catalogEntryRepository.Received(1)
-            .GetByIsbnAsync(Arg.Any<Isbn>(), token);
-        await _unitOfWork.Received(1).SaveChangesAsync(token);
     }
 
     #endregion

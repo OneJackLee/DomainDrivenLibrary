@@ -1,5 +1,3 @@
-using DomainDrivenLibrary.Books.BorrowBook;
-using DomainDrivenLibrary.Books.GetAllBooks;
 using DomainDrivenLibrary.Books.Identifier;
 using DomainDrivenLibrary.Borrowers;
 using DomainDrivenLibrary.Borrowers.Identifier;
@@ -9,10 +7,55 @@ using DomainDrivenLibrary.Data;
 using FluentAssertions;
 using NSubstitute;
 
-namespace DomainDrivenLibrary.Books;
+namespace DomainDrivenLibrary.Books.BorrowBook;
 
 public class BorrowBookCommandHandlerTests
 {
+
+    #region Validation Order
+
+    [Fact]
+    public async Task HandleAsync_ChecksBookExistsBeforeBorrowerExists()
+    {
+        // Arrange
+        _bookRepository.GetByIdAsync(Arg.Any<BookId>(), Arg.Any<CancellationToken>())
+            .Returns((Book?)null);
+        _borrowerRepository.ExistsAsync(Arg.Any<BorrowerId>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
+
+        // Act
+        Func<Task> act = () => _handler.HandleAsync(command);
+
+        // Assert - Should throw book not found, not borrower not found
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Book*not found*");
+    }
+
+    #endregion
+
+    #region Cancellation Token
+
+    [Fact]
+    public async Task HandleAsync_PassesCancellationTokenToAllRepositories()
+    {
+        // Arrange
+        var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
+        using var cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        // Act
+        await _handler.HandleAsync(command, token);
+
+        // Assert
+        await _bookRepository.Received(1).GetByIdAsync(Arg.Any<BookId>(), token);
+        await _borrowerRepository.Received(1).ExistsAsync(Arg.Any<BorrowerId>(), token);
+        await _catalogEntryRepository.Received(1).GetByIsbnAsync(Arg.Any<Isbn>(), token);
+        await _unitOfWork.Received(1).SaveChangesAsync(token);
+    }
+
+    #endregion
     #region Test Data
 
     private const string ValidBookId = "book-123";
@@ -77,7 +120,7 @@ public class BorrowBookCommandHandlerTests
         var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        BookDetailsDto result = await _handler.HandleAsync(command);
+        var result = await _handler.HandleAsync(command);
 
         // Assert
         result.Should().NotBeNull();
@@ -166,7 +209,8 @@ public class BorrowBookCommandHandlerTests
         var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -203,7 +247,8 @@ public class BorrowBookCommandHandlerTests
         var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
@@ -240,55 +285,11 @@ public class BorrowBookCommandHandlerTests
         var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
 
         // Act
-        try { await _handler.HandleAsync(command); } catch { }
+        try { await _handler.HandleAsync(command); }
+        catch {}
 
         // Assert
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
-    }
-
-    #endregion
-
-    #region Validation Order
-
-    [Fact]
-    public async Task HandleAsync_ChecksBookExistsBeforeBorrowerExists()
-    {
-        // Arrange
-        _bookRepository.GetByIdAsync(Arg.Any<BookId>(), Arg.Any<CancellationToken>())
-            .Returns((Book?)null);
-        _borrowerRepository.ExistsAsync(Arg.Any<BorrowerId>(), Arg.Any<CancellationToken>())
-            .Returns(false);
-
-        var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
-
-        // Act
-        Func<Task> act = () => _handler.HandleAsync(command);
-
-        // Assert - Should throw book not found, not borrower not found
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*Book*not found*");
-    }
-
-    #endregion
-
-    #region Cancellation Token
-
-    [Fact]
-    public async Task HandleAsync_PassesCancellationTokenToAllRepositories()
-    {
-        // Arrange
-        var command = new BorrowBookCommand(ValidBookId, ValidBorrowerId);
-        using var cts = new CancellationTokenSource();
-        CancellationToken token = cts.Token;
-
-        // Act
-        await _handler.HandleAsync(command, token);
-
-        // Assert
-        await _bookRepository.Received(1).GetByIdAsync(Arg.Any<BookId>(), token);
-        await _borrowerRepository.Received(1).ExistsAsync(Arg.Any<BorrowerId>(), token);
-        await _catalogEntryRepository.Received(1).GetByIsbnAsync(Arg.Any<Isbn>(), token);
-        await _unitOfWork.Received(1).SaveChangesAsync(token);
     }
 
     #endregion
