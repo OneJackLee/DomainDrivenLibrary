@@ -37,4 +37,11 @@ public interface IBorrowerRepository
     /// </summary>
     /// <param name="borrower">The borrower to add.</param>
     void Add(Borrower borrower);
+
+    /// <summary>
+    ///     Gets all borrowers in the system.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A read-only list of all borrowers.</returns>
+    Task<IReadOnlyList<Borrower>> GetAllAsync(CancellationToken cancellationToken = default);
 }

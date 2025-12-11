@@ -34,4 +34,11 @@ internal sealed class BorrowerRepository(AppDbContext dbContext) : IBorrowerRepo
 
     /// <inheritdoc />
     public void Add(Borrower borrower) => dbContext.Borrowers.Add(borrower);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Borrower>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Borrowers
+            .ToListAsync(cancellationToken);
+    }
 }
