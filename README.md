@@ -67,7 +67,18 @@ See [API_Guide.md](./API_Guide.md) for detailed guide on how to use this API.
 | 7 | Register Borrower    | POST   | `/api/borrowers`              | Register a new borrower   |
 | 8 | Get All Borrowers    | GET    | `/api/borrowers`              | Get all borrowers         |
 
-### Limitation of the web API server
+### Assumptions
+
+This project was built with the following assumptions:
+
+- **Scope**: Backend API only - no UI or authentication required
+- **Borrower identity**: Email address uniquely identifies a borrower
+- **ISBN enforcement**: Books with mismatched title/author for an existing ISBN are rejected
+- **Pagination**: Not required for GetAll endpoints
+
+See [assumption.md](./assumption.md) for the complete list including development process assumptions.
+
+### Limitations
 
 - The checksum for ISBN-10/ISBN-13 is not implemented yet
 - The book borrow history is not implemented yet
