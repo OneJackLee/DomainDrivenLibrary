@@ -1,5 +1,6 @@
 using DomainDrivenLibrary.Borrowers;
 using DomainDrivenLibrary.Borrowers.Identifier;
+using DomainDrivenLibrary.Borrowers.ValueObjects;
 using DomainDrivenLibrary.Dependencies;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,13 @@ internal sealed class BorrowerRepository(AppDbContext dbContext) : IBorrowerRepo
     {
         return await dbContext.Borrowers
             .AnyAsync(b => b.Id == id, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ExistsByEmailAsync(EmailAddress emailAddress, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Borrowers
+            .AnyAsync(b => b.EmailAddress == emailAddress, cancellationToken);
     }
 
     /// <inheritdoc />

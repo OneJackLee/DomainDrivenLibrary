@@ -1,4 +1,5 @@
 using DomainDrivenLibrary.Borrowers.Identifier;
+using DomainDrivenLibrary.Borrowers.ValueObjects;
 
 namespace DomainDrivenLibrary.Borrowers;
 
@@ -22,6 +23,14 @@ public interface IBorrowerRepository
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if the borrower exists; otherwise, false.</returns>
     Task<bool> ExistsAsync(BorrowerId id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Checks if a borrower with the specified email address already exists.
+    /// </summary>
+    /// <param name="emailAddress">The email address to check.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if a borrower with this email exists; otherwise, false.</returns>
+    Task<bool> ExistsByEmailAsync(EmailAddress emailAddress, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Adds a new borrower to the repository.
