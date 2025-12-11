@@ -76,7 +76,7 @@ This project was built with the following assumptions:
 - **ISBN enforcement**: Books with mismatched title/author for an existing ISBN are rejected
 - **Pagination**: Not required for GetAll endpoints
 
-See [assumption.md](./assumption.md) for the complete list including development process assumptions.
+See [assumption.md](./Assumption.md) for the complete list including development process assumptions.
 
 ### Limitations
 
