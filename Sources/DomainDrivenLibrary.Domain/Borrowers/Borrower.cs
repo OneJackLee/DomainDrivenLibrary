@@ -35,14 +35,14 @@ public sealed class Borrower : EntityBase<BorrowerId>
     public EmailAddress EmailAddress { get; private set; } = null!;
 
     /// <summary>
-    ///     Creates a new borrower (registers a new library member).
+    ///     Register a new borrower.
     /// </summary>
     /// <param name="id">The unique identifier for the borrower.</param>
     /// <param name="name">The borrower's name (cannot be empty).</param>
     /// <param name="emailAddress">The borrower's validated email address.</param>
     /// <returns>A new <see cref="Borrower" /> instance.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name" /> is null or whitespace.</exception>
-    public static Borrower Create(
+    public static Borrower Register(
         BorrowerId id,
         string name,
         EmailAddress emailAddress)
